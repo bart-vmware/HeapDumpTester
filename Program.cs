@@ -13,6 +13,9 @@ using Steeltoe.Management.Endpoint.Actuators.HeapDump;
 // - dotnet tool restore
 // - dotnet dotnet-heapview <PATH>.gcdump
 
+string outputDirectory = Path.Combine(Environment.CurrentDirectory, args.Length == 1 ? args[0] : "../../../artifacts");
+Directory.CreateDirectory(outputDirectory);
+
 var optionsMonitor = new HeapDumpTestOptionsMonitor();
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
@@ -33,8 +36,12 @@ foreach (HeapDumpType type in Enum.GetValues<HeapDumpType>())
 
     try
     {
-        string path = heapDumper.DumpHeapToFile(CancellationToken.None);
-        logger.LogInformation("Dump file written to {Path}", path);
+        string tempPath = heapDumper.DumpHeapToFile(CancellationToken.None);
+
+        string outputPath = Path.GetFullPath(Path.Combine(outputDirectory, Path.GetFileName(tempPath)));
+        File.Copy(tempPath, outputPath);
+
+        logger.LogInformation("Dump file written to {Path}", outputPath);
     }
     catch (Exception exception)
     {
